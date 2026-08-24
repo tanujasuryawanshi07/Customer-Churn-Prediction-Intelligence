@@ -194,3 +194,313 @@ print("\n==========================================")
 print("DAY 7 FEATURE ENGINEERING COMPLETED SUCCESSFULLY!")
 print("Feature selection and filter methods completed.")
 print("==========================================")
+
+
+# ==========================================
+# DAY 8 - SIMPLE LINEAR REGRESSION
+# BINARY CLASSIFICATION
+# ==========================================
+
+import numpy as np
+
+print("\n==========================================")
+print("DAY 8 - LINEAR REGRESSION CLASSIFICATION")
+print("==========================================")
+
+# ------------------------------------------
+# 1. Prepare Predictor and Target
+# ------------------------------------------
+
+model_df = df[
+    ["DaySinceLastOrder", "Churn"]
+].copy()
+
+model_df["DaySinceLastOrder"] = model_df[
+    "DaySinceLastOrder"
+].fillna(
+    model_df["DaySinceLastOrder"].median()
+)
+
+X = model_df["DaySinceLastOrder"].to_numpy(
+    dtype=float
+)
+
+y = model_df["Churn"].to_numpy(
+    dtype=float
+)
+
+# ------------------------------------------
+# 2. Add Intercept Column
+# ------------------------------------------
+
+X_matrix = np.column_stack(
+    [
+        np.ones(len(X)),
+        X
+    ]
+)
+
+# ------------------------------------------
+# 3. Closed-Form Linear Regression
+#    w = (X^T X)^-1 X^T y
+# ------------------------------------------
+
+X_transpose = X_matrix.T
+
+weights = np.linalg.inv(
+    X_transpose @ X_matrix
+) @ X_transpose @ y
+
+print("Model Weights:")
+print(weights)
+
+# ------------------------------------------
+# 4. Generate Continuous Predictions
+# ------------------------------------------
+
+predictions = X_matrix @ weights
+
+# ------------------------------------------
+# 5. Apply 0.5 Classification Threshold
+# ------------------------------------------
+
+predicted_classes = (
+    predictions >= 0.5
+).astype(int)
+
+# ------------------------------------------
+# 6. Confusion Matrix Calculation
+# ------------------------------------------
+
+true_positive = np.sum(
+    (y == 1) & (predicted_classes == 1)
+)
+
+true_negative = np.sum(
+    (y == 0) & (predicted_classes == 0)
+)
+
+false_positive = np.sum(
+    (y == 0) & (predicted_classes == 1)
+)
+
+false_negative = np.sum(
+    (y == 1) & (predicted_classes == 0)
+)
+
+# ------------------------------------------
+# 7. Accuracy
+# ------------------------------------------
+
+accuracy = (
+    true_positive + true_negative
+) / len(y)
+
+print("\n==========================================")
+print("CONFUSION MATRIX")
+print("==========================================")
+
+print("True Positive :", true_positive)
+print("True Negative :", true_negative)
+print("False Positive:", false_positive)
+print("False Negative:", false_negative)
+
+print("\nClassification Accuracy: {:.2f}%".format(
+    accuracy * 100
+))
+
+# ------------------------------------------
+# 8. Save Predictions
+# ------------------------------------------
+
+model_results = model_df.copy()
+
+model_results["PredictedScore"] = predictions
+model_results["PredictedChurn"] = predicted_classes
+
+model_results.to_csv(
+    "outputs/linear_regression_predictions.csv",
+    index=False
+)
+
+print(
+    "\nSaved: outputs/linear_regression_predictions.csv"
+)
+
+print("\n==========================================")
+print("DAY 8 LINEAR REGRESSION COMPLETED!")
+print("==========================================")
+
+# ==========================================
+# DAY 9 - A/B TESTING SIMULATION
+# ==========================================
+
+import numpy as np
+
+print("\n==========================================")
+print("DAY 9 - A/B TESTING SIMULATION")
+print("==========================================")
+
+# ------------------------------------------
+# 1. Create a copy of customer data
+# ------------------------------------------
+
+ab_df = df.copy()
+
+# ------------------------------------------
+# 2. Randomly assign customers to groups
+# ------------------------------------------
+
+np.random.seed(42)
+
+ab_df["Group"] = np.random.choice(
+    ["Control", "Variant"],
+    size=len(ab_df)
+)
+
+# ------------------------------------------
+# 3. Define Retention
+#    Churn = 0 means retained customer
+# ------------------------------------------
+
+ab_df["Retained"] = (
+    ab_df["Churn"] == 0
+).astype(int)
+
+# ------------------------------------------
+# 4. Calculate Group Statistics
+# ------------------------------------------
+
+group_summary = (
+    ab_df.groupby("Group")
+    .agg(
+        TotalCustomers=("CustomerID", "count"),
+        RetainedCustomers=("Retained", "sum"),
+        ChurnedCustomers=("Churn", "sum")
+    )
+    .reset_index()
+)
+
+group_summary["RetentionRate"] = (
+    group_summary["RetainedCustomers"]
+    / group_summary["TotalCustomers"]
+) * 100
+
+group_summary["ChurnRate"] = (
+    group_summary["ChurnedCustomers"]
+    / group_summary["TotalCustomers"]
+) * 100
+
+print("\n==========================================")
+print("A/B TEST RESULTS")
+print("==========================================")
+
+print(group_summary)
+
+# ------------------------------------------
+# 5. Compare Control vs Variant
+# ------------------------------------------
+
+control_retention = group_summary.loc[
+    group_summary["Group"] == "Control",
+    "RetentionRate"
+].iloc[0]
+
+variant_retention = group_summary.loc[
+    group_summary["Group"] == "Variant",
+    "RetentionRate"
+].iloc[0]
+
+retention_difference = (
+    variant_retention - control_retention
+)
+
+print("\nControl Retention Rate: {:.2f}%".format(
+    control_retention
+))
+
+print("Variant Retention Rate: {:.2f}%".format(
+    variant_retention
+))
+
+print("Retention Difference: {:.2f} percentage points".format(
+    retention_difference
+))
+
+# ------------------------------------------
+# 6. Simple Statistical Comparison
+# ------------------------------------------
+
+from math import sqrt
+
+control_row = group_summary[
+    group_summary["Group"] == "Control"
+].iloc[0]
+
+variant_row = group_summary[
+    group_summary["Group"] == "Variant"
+].iloc[0]
+
+p1 = control_row["RetentionRate"] / 100
+p2 = variant_row["RetentionRate"] / 100
+
+n1 = control_row["TotalCustomers"]
+n2 = variant_row["TotalCustomers"]
+
+pooled_p = (
+    control_row["RetainedCustomers"]
+    + variant_row["RetainedCustomers"]
+) / (n1 + n2)
+
+standard_error = sqrt(
+    pooled_p
+    * (1 - pooled_p)
+    * (1 / n1 + 1 / n2)
+)
+
+if standard_error != 0:
+    z_score = (p2 - p1) / standard_error
+else:
+    z_score = 0
+
+print("\nZ-Score: {:.4f}".format(z_score))
+
+# ------------------------------------------
+# 7. Business Interpretation
+# ------------------------------------------
+
+if retention_difference > 0:
+    print(
+        "\nVariant group has a higher retention rate "
+        "than the Control group."
+    )
+elif retention_difference < 0:
+    print(
+        "\nVariant group has a lower retention rate "
+        "than the Control group."
+    )
+else:
+    print(
+        "\nBoth groups have the same retention rate."
+    )
+
+# ------------------------------------------
+# 8. Save A/B Test Results
+# ------------------------------------------
+
+group_summary.to_csv(
+    "outputs/ab_test_results.csv",
+    index=False
+)
+
+print("\nSaved: outputs/ab_test_results.csv")
+
+print("\n==========================================")
+print("DAY 9 A/B TESTING COMPLETED!")
+print("==========================================")
+
+
+
+
+
+
