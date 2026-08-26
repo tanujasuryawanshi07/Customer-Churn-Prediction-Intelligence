@@ -5,7 +5,7 @@ from ydata_profiling import ProfileReport
 # 1. Load Dataset
 # ==========================================
 
-file_path = "data/E Commerce Dataset-E Comm.csv"
+file_path = "Data/E Commerce Dataset-E Comm.csv"
 
 df = pd.read_csv(file_path)
 
