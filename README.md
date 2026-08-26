@@ -41,7 +41,7 @@ Customer-Churn-Prediction-Intelligence/
 ├── src/
 │   ├── 01_etl_sql.py
 │   ├── 02_database_merge.py
-│   ├── 03_eda_profiling.py
+│   ├── 02_eda_profiling.py
 │   ├── 03_analytics.py
 │   ├── 04_visualization.py
 │   └── 04_ml_modeling.py
