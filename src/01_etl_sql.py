@@ -6,7 +6,7 @@ import sqlite3
 # 1. Load and Validate Dataset
 # -----------------------------
 
-file_path = "data/E Commerce Dataset-E Comm.csv"
+file_path = "Data/E Commerce Dataset-E Comm.csv"
 
 try:
     df = pd.read_csv(file_path)
