@@ -1,20 +1,8 @@
-import argparse
 import subprocess
 import sys
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Customer Churn Intelligence - End-to-End Pipeline"
-    )
-
-    parser.add_argument(
-        "--input",
-        required=True,
-        help="Path to the input CSV file"
-    )
-
-    args = parser.parse_args()
 
     scripts = [
         "src/01_etl_sql.py",
@@ -30,10 +18,9 @@ def main():
         print(f"\nRunning {script}...")
 
         subprocess.run(
-    [sys.executable, script],
-    check=True
-)
-        
+            [sys.executable, script],
+            check=True
+        )
 
     print("\nPipeline completed successfully!")
 
